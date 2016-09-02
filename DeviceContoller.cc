@@ -114,6 +114,7 @@ char* DeviceController::introspectWithDescriptions(const char* sessionName, cons
 
     //Go ahead and tell AllJoyn to set the interfaces now and save us an Introspection request later
     remoteObj.ParseXml(reply->GetArg(0)->v_string.str);
+    cout << "Intro xml Property: " << reply->GetArg(0)->v_string.str << endl;
 
     return ::strdup(reply->GetArg(0)->v_string.str);
 }
@@ -124,37 +125,62 @@ void DeviceController::callAction(ActionInfo* action)
     ajn::SessionId mSessionId;
     QStatus status = ER_OK;
     short port = mBusPortMap[action->mUniqueName];
+    //int sessionId = mBusSessionMap[action->mUniqueName];
 
-    cout << "callAction on, port " << action->mUniqueName.c_str() << port << endl;
+    cout << "callAction on, port " << action->mUniqueName << action->toString() << " port:"<< port << endl;
     SessionOpts opts(SessionOpts::TRAFFIC_MESSAGES, false, SessionOpts::PROXIMITY_ANY, TRANSPORT_ANY);
     status = mBusAttachment->JoinSession(action->mUniqueName.c_str(), port, this,  mSessionId, opts);
+
+    //introspectWithDescriptions(action->mUniqueName.c_str(), action->mPath.c_str(), sessionId);
+		
     if ((ER_OK == status || ER_ALLJOYN_JOINSESSION_REPLY_ALREADY_JOINED == status)) {
         //cout <<"Creating ProxyBusObject with SessionId: %d", mSessionId);
-        actionObject = new ProxyBusObject(*mBusAttachment, action->mUniqueName.c_str(), action->mPath.c_str(), mSessionId);
+        actionObject = new ProxyBusObject(*mBusAttachment, action->mUniqueName.c_str(), "/MyDeviceEventsAndActions", mSessionId);//action->mPath.c_str(), mSessionId);
         //actionObject = new ProxyBusObject(*mBusAttachment, action->mUniqueName.c_str(), action->mPath.c_str(), 0);
-        const InterfaceDescription* actionIntf = mBusAttachment->GetInterface(action->mIfaceName.c_str());
+        const InterfaceDescription* actionIntf = mBusAttachment->GetInterface("org.alljoyn.ACServerSample.Actions");//action->mIfaceName.c_str());
         if (actionIntf) {
             actionObject->AddInterface(*actionIntf);
         } else {
             status = actionObject->IntrospectRemoteObject();
             cout << "Introspect Object called " << QCC_StatusText(status)<< status << endl;
         }
-        actionIntf = mBusAttachment->GetInterface(action->mIfaceName.c_str());
+        actionIntf = mBusAttachment->GetInterface("org.alljoyn.ACServerSample.Actions");//action->mIfaceName.c_str());
         if (actionIntf && actionObject) {
-            cout <<"Calling device() action "<<
+            cout <<"Calling device() action:** -> "<<
                     action->mUniqueName.c_str()<< action->mIfaceName.c_str()<<
                     action->mMember.c_str()<< action->mSignature.c_str() << endl;
-            //status = actionObject->MethodCall(action->mIfaceName.c_str(), action->mMember.c_str(), NULL, 0, );
+            
             Message reply(*mBusAttachment);
-            const InterfaceDescription::Member* methodMember = actionIntf->GetMember(action->mMember.c_str());
-            status = actionObject->MethodCall(*methodMember, NULL, 0, reply);
-            //cout <<"MethodCall status: %s(%x)", QCC_StatusText(status), status);
+
+	    //AllJoynVariant args[1];
+	    //args[0].Set("q", 0);
+	
+	    cout << "Before Member instance:" << endl;
+	    cout << " Member instance1 ->:" << actionIntf->GetName() << endl;
+		//cout << "Befre Member instance2 **-> :" << actionIntf->GetMember("MetadataChanged")<< endl;
+		//cout << "Member instance3:" << actionIntf->GetMember("SetValue") << endl;
+
+            //const InterfaceDescription::Member* methodMember = actionIntf->GetMember("SetValue");
+	
+    	    //cout << "Got the Member instance:" << methodMember->memberType << methodMember->name
+//<< methodMember->signature << methodMember->argNames << endl;
+
+	    //MsgArg inputs[1];
+    	    //inputs[0].Set("q", 0);
+	//const InterfaceDescription::Member* methodMember1 = actionIntf->GetMember("Value");
+	//cout << "Got the Member instance ---> 3:" << methodMember1->memberType << methodMember1->name << methodMember1->signature << methodMember1->argNames << endl;
+
+	status = actionObject->MethodCall("org.alljoyn.ACServerSample.Actions", "SetModeToAuto", NULL, 0, reply);
+
+            //status = actionObject->MethodCall(*methodMember, inputs, 1, reply);
+            cout << "MethodCall status:" << QCC_StatusText(status) << status << endl;
+		
         } else {
-            cout <<"Failed MethodCall status: %s(%x)" << QCC_StatusText(status) << status << endl;
+            cout <<"Failed MethodCall status: " << QCC_StatusText(status) << status << endl;
         }
-        mBusAttachment->LeaveSession(mSessionId);
+        //mBusAttachment->LeaveSession(mSessionId);
     } else {
-        //cout <<"Failed to join session status: %s(%x)", QCC_StatusText(status), status);
+        cout << "Failed to join session status: " << QCC_StatusText(status) << status << endl;
     }
 }
 

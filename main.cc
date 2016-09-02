@@ -58,6 +58,7 @@ using namespace ajn::services;
 using namespace ajn::gw;
 using namespace std;
 
+DeviceController* deviceController;
 MQTTClient client;
 MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
 
@@ -451,15 +452,23 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
     printf("     topic: %s\n", topicName);
     printf("   message: ");
 
+    cout << "Message payload" << message << message->payload << endl;
     payloadptr = (char*)message->payload;
     for(i=0; i<message->payloadlen; i++)
     {
-        putchar(*payloadptr++);
+// Now Trigger Method
+    ActionInfo actionInfo((char*)message->payload, "/ControlPanel/MyDevice/rootContainer/en/controlsContainer/ac_mode", "org.alljoyn.ControlPanel.Property", "setValue", "q", "0", "1");
+    actionInfo.setSenderInfo("749df3c84b2e489cbd534cc8fd3fd5f4", "749df3c84b2e489cbd534cc8fd3fd5f4");
+    
+    // Call Action      
+    deviceController->callAction(&actionInfo);
+        putchar(*payloadptr);
     }
     putchar('\n');
-    // Now Trigger Method
-    ActionInfo actionInfo("uniqueName", "/ControlPanel/MyDevice/rootContainer/en/controlsContainer/ac_mode", "org.alljoyn.ControlPanel.Property", "setValue", "q", "749df3c84b2e489cbd534cc8fd3fd5f4", "749df3c84b2e489cbd534cc8fd3fd5f4");
-    cout << "Message got due to subscribe: " << (char*)payloadptr << "  Message: " << *payloadptr << endl;
+    cout << "Message got due to subscribe: " << (char*)payloadptr << "  Message: " << *payloadptr << " M1: " << payloadptr << " M2: "<< &payloadptr[0] << endl;
+
+    	
+    
     MQTTClient_freeMessage(&message);
     MQTTClient_free(topicName);
     return 1;
@@ -650,8 +659,8 @@ int main(int argc, char** argv) {
 
     // Register for all Announcement and store busname and freindly name in map
     
-    DeviceController deviceController(&bus);
-    deviceController.initialize(argv[2]);
+    deviceController = new DeviceController(&bus);
+    deviceController->initialize(argv[2]);
 
 
     //====================================

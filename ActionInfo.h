@@ -22,9 +22,10 @@
 class ActionInfo {
   public:
     ActionInfo(const char* uniqueName, const char* path, const char* iface,
-               const char* member, const char* sig)
+               const char* member, const char* sig, const char* value, const char* argLength)
         : mUniqueName(uniqueName), mPath(path), mIfaceName(iface),
-        mMember(member), mSignature(sig), mDeviceId(qcc::String::Empty), mAppId(qcc::String::Empty)
+        mMember(member), mSignature(sig), mDeviceId(qcc::String::Empty), mAppId(qcc::String::Empty),
+        mValue(value), mArgLength(argLength)
     { };
 
     virtual ~ActionInfo() { };
@@ -50,6 +51,10 @@ class ActionInfo {
         ret.append(",");
         ret.append(mAppId);
         ret.append(",");
+ret.append(mValue);
+        ret.append(",");
+ret.append(mArgLength);
+        ret.append(",");
         return ret;
     }
 
@@ -61,6 +66,8 @@ class ActionInfo {
     qcc::String mSignature;
     qcc::String mDeviceId;
     qcc::String mAppId;
+    qcc::String mValue;
+    qcc::String mArgLength;
 };
 
 #endif //_ACTION_INFO_
