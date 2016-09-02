@@ -457,7 +457,7 @@ int msgarrvd(void *context, char *topicName, int topicLen, MQTTClient_message *m
     for(i=0; i<message->payloadlen; i++)
     {
 // Now Trigger Method
-    ActionInfo actionInfo((char*)message->payload, "/ControlPanel/MyDevice/rootContainer/en/controlsContainer/ac_mode", "org.alljoyn.ControlPanel.Property", "setValue", "q", "0", "1");
+    ActionInfo actionInfo((char*)message->payload, "/ControlPanel/MyDevice/rootContainer/en/controlsContainer/ac_mode", "org.alljoyn.ControlPanel.Property", "setValue", "q", "900", "1");
     actionInfo.setSenderInfo("749df3c84b2e489cbd534cc8fd3fd5f4", "749df3c84b2e489cbd534cc8fd3fd5f4");
     
     // Call Action      

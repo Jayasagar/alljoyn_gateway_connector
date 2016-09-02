@@ -127,58 +127,49 @@ void DeviceController::callAction(ActionInfo* action)
     short port = mBusPortMap[action->mUniqueName];
     //int sessionId = mBusSessionMap[action->mUniqueName];
 
-    cout << "callAction on, port " << action->mUniqueName << action->toString() << " port:"<< port << endl;
+    cout << "callAction on, port: " << action->mUniqueName << action->toString() << " port:"<< port << endl;
     SessionOpts opts(SessionOpts::TRAFFIC_MESSAGES, false, SessionOpts::PROXIMITY_ANY, TRANSPORT_ANY);
-    status = mBusAttachment->JoinSession(action->mUniqueName.c_str(), port, this,  mSessionId, opts);
+    status = mBusAttachment->JoinSession(action->mUniqueName.c_str(), 900, this,  mSessionId, opts);
 
     //introspectWithDescriptions(action->mUniqueName.c_str(), action->mPath.c_str(), sessionId);
 		
     if ((ER_OK == status || ER_ALLJOYN_JOINSESSION_REPLY_ALREADY_JOINED == status)) {
         //cout <<"Creating ProxyBusObject with SessionId: %d", mSessionId);
-        actionObject = new ProxyBusObject(*mBusAttachment, action->mUniqueName.c_str(), "/MyDeviceEventsAndActions", mSessionId);//action->mPath.c_str(), mSessionId);
-        //actionObject = new ProxyBusObject(*mBusAttachment, action->mUniqueName.c_str(), action->mPath.c_str(), 0);
-        const InterfaceDescription* actionIntf = mBusAttachment->GetInterface("org.alljoyn.ACServerSample.Actions");//action->mIfaceName.c_str());
+        actionObject = new ProxyBusObject(*mBusAttachment, action->mUniqueName.c_str(), action->mPath.c_str(), mSessionId);
+        
+        const InterfaceDescription* actionIntf = mBusAttachment->GetInterface(action->mIfaceName.c_str());
         if (actionIntf) {
             actionObject->AddInterface(*actionIntf);
         } else {
             status = actionObject->IntrospectRemoteObject();
             cout << "Introspect Object called " << QCC_StatusText(status)<< status << endl;
         }
-        actionIntf = mBusAttachment->GetInterface("org.alljoyn.ACServerSample.Actions");//action->mIfaceName.c_str());
+        actionIntf = mBusAttachment->GetInterface(action->mIfaceName.c_str());
         if (actionIntf && actionObject) {
-            cout <<"Calling device() action:** -> "<<
+            cout <<"Calling device() action *** : -> "<<
                     action->mUniqueName.c_str()<< action->mIfaceName.c_str()<<
                     action->mMember.c_str()<< action->mSignature.c_str() << endl;
             
             Message reply(*mBusAttachment);
-
-	    //AllJoynVariant args[1];
-	    //args[0].Set("q", 0);
 	
-	    cout << "Before Member instance:" << endl;
-	    cout << " Member instance1 ->:" << actionIntf->GetName() << endl;
-		//cout << "Befre Member instance2 **-> :" << actionIntf->GetMember("MetadataChanged")<< endl;
-		//cout << "Member instance3:" << actionIntf->GetMember("SetValue") << endl;
-
-            //const InterfaceDescription::Member* methodMember = actionIntf->GetMember("SetValue");
-	
-    	    //cout << "Got the Member instance:" << methodMember->memberType << methodMember->name
-//<< methodMember->signature << methodMember->argNames << endl;
+	    cout << "Before Member instance:-( " << endl;
 
 	    //MsgArg inputs[1];
     	    //inputs[0].Set("q", 0);
-	//const InterfaceDescription::Member* methodMember1 = actionIntf->GetMember("Value");
-	//cout << "Got the Member instance ---> 3:" << methodMember1->memberType << methodMember1->name << methodMember1->signature << methodMember1->argNames << endl;
+	    MsgArg valueArg;
+    	    MsgArg* variantArg = new MsgArg("q", 1);
+    	    QStatus status = valueArg.Set("v", variantArg);
 
-	status = actionObject->MethodCall("org.alljoyn.ACServerSample.Actions", "SetModeToAuto", NULL, 0, reply);
-
-            //status = actionObject->MethodCall(*methodMember, inputs, 1, reply);
+	    const InterfaceDescription::Member* methodMember = actionIntf->GetMember("abc");
+cout << " Member instance 1:-( " << methodMember<< endl;
+	    //status = actionObject->MethodCall(*methodMember, &valueArg, 1, reply);
+	    actionObject->SetProperty(action->mIfaceName.c_str(), "Value", valueArg);
             cout << "MethodCall status:" << QCC_StatusText(status) << status << endl;
 		
         } else {
             cout <<"Failed MethodCall status: " << QCC_StatusText(status) << status << endl;
         }
-        //mBusAttachment->LeaveSession(mSessionId);
+        mBusAttachment->LeaveSession(mSessionId);
     } else {
         cout << "Failed to join session status: " << QCC_StatusText(status) << status << endl;
     }
